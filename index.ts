@@ -14,7 +14,7 @@ enum RawTile {
   KEY2, LOCK2
 }
 
-interface Tile {
+interface Type {
   isAir(): boolean;
   isLock1(): boolean;
   isLock2(): boolean;
@@ -24,7 +24,7 @@ interface Tile {
   update(x: number, y: number): void;
 }
 
-class Air implements Tile {
+class Air implements Type {
   isAir() { return true; }
   isLock1() { return false; }
   isLock2() { return false; }
@@ -38,7 +38,7 @@ class Air implements Tile {
   update(x: number, y: number) { }
 }
 
-class Flux implements Tile {
+class Flux implements Type {
   isAir() { return false; }
   isLock1() { return false; }
   isLock2() { return false; }
@@ -55,7 +55,7 @@ class Flux implements Tile {
   update(x: number, y: number) { }
 }
 
-class Unbreakable implements Tile {
+class Unbreakable implements Type {
   isAir() { return false; }
   isLock1() { return false; }
   isLock2() { return false; }
@@ -68,7 +68,7 @@ class Unbreakable implements Tile {
   update(x: number, y: number) { }
 }
 
-class Player implements Tile {
+class PlayerTile implements Type {
   isAir() { return false; }
   isLock1() { return false; }
   isLock2() { return false; }
@@ -78,7 +78,7 @@ class Player implements Tile {
   update(x: number, y: number) { }
 }
 
-class Stone implements Tile {
+class Stone implements Type {
   private fallStrategy: FallStrategy;
   private pushStrategy: PushStrategy;
   constructor(falling: boolean) {
@@ -101,7 +101,7 @@ class Stone implements Tile {
   }
 }
 
-class Box implements Tile {
+class Box implements Type {
   private fallStrategy: FallStrategy;
   private pushStrategy: PushStrategy;
   constructor(falling: boolean) {
@@ -124,7 +124,7 @@ class Box implements Tile {
   }
 }
 
-class Key implements Tile {
+class Key implements Type {
   constructor(private keyConf: KeyConfiguration) { }
   isAir() { return false; }
   isLock1() { return false; }
@@ -144,7 +144,7 @@ class Key implements Tile {
   update(x: number, y: number) { }
 }
 
-class Lock implements Tile {
+class Lock implements Type {
   constructor(private keyConf: KeyConfiguration) { }
   isAir() { return false; }
   isLock1() { return this.keyConf.is1(); }
@@ -161,11 +161,11 @@ class Lock implements Tile {
 class FallStrategy {
   constructor(private falling: boolean) { }
   isFalling() { return this.falling; }
-  update(tile: Tile, x: number, y: number) {
+  update(tile: Type, x: number, y: number) {
     this.falling = map[y + 1][x].isAir();
     this.drop(tile, x, y);
   }
-  private drop(tile: Tile, x: number, y: number) {
+  private drop(tile: Type, x: number, y: number) {
     if (this.falling) {
       map[y + 1][x] = tile;
       map[y][x] = new Air();
@@ -174,7 +174,7 @@ class FallStrategy {
 }
 
 class PushStrategy {
-  moveHorizontal(tile: Tile, dx: number) {
+  moveHorizontal(tile: Type, dx: number) {
     if (map[playery][playerx + dx + dx].isAir()
       && !map[playery + 1][playerx + dx].isAir()) {
       map[playery][playerx + dx + dx] = tile;
@@ -221,14 +221,14 @@ let rawMap: RawTile[][] = [
   [2, 4, 1, 1, 1, 9, 0, 2],
   [2, 2, 2, 2, 2, 2, 2, 2],
 ];
-let map: Tile[][];
+let map: Type[][];
 function assertExhausted(x: never): never {
   throw new Error("Unexpected object: " + x);
 }
 function transformTile(tile: RawTile) {
   switch (tile) {
     case RawTile.AIR: return new Air();
-    case RawTile.PLAYER: return new Player();
+    case RawTile.PLAYER: return new PlayerTile();
     case RawTile.UNBREAKABLE: return new Unbreakable();
     case RawTile.STONE: return new Stone(false);
     case RawTile.FALLING_STONE: return new Stone(true);
@@ -265,15 +265,15 @@ function remove(shouldRemove: RemoveStrategy) {
 }
 
 interface RemoveStrategy {
-  check(tile: Tile): boolean;
+  check(tile: Type): boolean;
 }
 class RemoveLock1 implements RemoveStrategy {
-  check(tile: Tile) {
+  check(tile: Type) {
     return tile.isLock1();
   }
 }
 class RemoveLock2 implements RemoveStrategy {
-  check(tile: Tile) {
+  check(tile: Type) {
     return tile.isLock2();
   }
 }
@@ -293,7 +293,7 @@ const BLUE_KEY = new KeyConfiguration("#00ccff", false, new RemoveLock2());
 
 function moveToTile(newx: number, newy: number) {
   map[playery][playerx] = new Air();
-  map[newy][newx] = new Player();
+  map[newy][newx] = new PlayerTile();
   playerx = newx;
   playery = newy;
 }
