@@ -214,7 +214,7 @@ class Player {
     g.fillStyle = "#ff0000";
     g.fillRect(this.x * TILE_SIZE, this.y * TILE_SIZE, TILE_SIZE, TILE_SIZE);
   }
-  moveToTile(newx: number, newy: number) {
+  private moveToTile(newx: number, newy: number) {
     map[this.y][this.x] = new Air();
     map[newy][newx] = new PlayerTile();
     this.x = newx;
