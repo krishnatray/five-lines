@@ -30,10 +30,10 @@ class Air implements Tile {
   isLock2() { return false; }
   draw(g: CanvasRenderingContext2D, x: number, y: number) { }
   moveHorizontal(player: Player, dx: number) {
-    player.moveToTile(player.getX() + dx, player.getY());
+    player.move(dx, 0);
   }
   moveVertical(player: Player, dy: number) {
-    player.moveToTile(player.getX(), player.getY() + dy);
+    player.move(0, dy);
   }
   update(x: number, y: number) { }
 }
@@ -47,10 +47,10 @@ class Flux implements Tile {
     g.fillRect(x * TILE_SIZE, y * TILE_SIZE, TILE_SIZE, TILE_SIZE);
   }
   moveHorizontal(player: Player, dx: number) {
-    player.moveToTile(player.getX() + dx, player.getY());
+    player.move(dx, 0);
   }
   moveVertical(player: Player, dy: number) {
-    player.moveToTile(player.getX(), player.getY() + dy);
+    player.move(0, dy);
   }
   update(x: number, y: number) { }
 }
@@ -135,11 +135,11 @@ class Key implements Tile {
   }
   moveHorizontal(player: Player, dx: number) {
     this.keyConf.removeLock();
-    player.moveToTile(player.getX() + dx, player.getY());
+    player.move(dx, 0);
   }
   moveVertical(player: Player, dy: number) {
     this.keyConf.removeLock();
-    player.moveToTile(player.getX(), player.getY() + dy);
+    player.move(0, dy);
   }
   update(x: number, y: number) { }
 }
@@ -175,11 +175,7 @@ class FallStrategy {
 
 class PushStrategy {
   moveHorizontal(player: Player, tile: Tile, dx: number) {
-    if (map[player.getY()][player.getX() + dx + dx].isAir()
-      && !map[player.getY() + 1][player.getX() + dx].isAir()) {
-      map[player.getY()][player.getX() + dx + dx] = tile;
-      player.moveToTile(player.getX() + dx, player.getY());
-    }
+    player.pushHorizontal(tile, dx);
   }
 }
 
@@ -189,33 +185,31 @@ interface Input {
 
 class Right implements Input {
   handle(player: Player) {
-    map[player.getY()][player.getX() + 1].moveHorizontal(player, 1);
+    player.moveHorizontal(1);
   }
 }
 
 class Left implements Input {
   handle(player: Player) {
-    map[player.getY()][player.getX() - 1].moveHorizontal(player, -1);
+    player.moveHorizontal(-1);
   }
 }
 
 class Up implements Input {
   handle(player: Player) {
-    map[player.getY() - 1][player.getX()].moveVertical(player, -1);
+    player.moveVertical(-1);
   }
 }
 
 class Down implements Input {
   handle(player: Player) {
-    map[player.getY() + 1][player.getX()].moveVertical(player, 1);
+    player.moveVertical(1);
   }
 }
 
 class Player {
   private x = 1;
   private y = 1;
-  getX() { return this.x; }
-  getY() { return this.y; }
   draw(g: CanvasRenderingContext2D) {
     g.fillStyle = "#ff0000";
     g.fillRect(this.x * TILE_SIZE, this.y * TILE_SIZE, TILE_SIZE, TILE_SIZE);
@@ -225,6 +219,22 @@ class Player {
     map[newy][newx] = new PlayerTile();
     this.x = newx;
     this.y = newy;
+  }
+  moveHorizontal(dx: number) {
+    map[this.y][this.x + dx].moveHorizontal(this, dx);
+  }
+  moveVertical(dy: number) {
+    map[this.y + dy][this.x].moveVertical(this, dy);
+  }
+  move(dx: number, dy: number) {
+    this.moveToTile(this.x + dx, this.y + dy);
+  }
+  pushHorizontal(tile: Tile, dx: number) {
+    if (map[this.y][this.x + dx + dx].isAir()
+      && !map[this.y + 1][this.x + dx].isAir()) {
+      map[this.y][this.x + dx + dx] = tile;
+      player.moveToTile(this.x + dx, this.y);
+    }
   }
 }
 let player = new Player();
